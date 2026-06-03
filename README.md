@@ -1,6 +1,6 @@
 # USG–ARA Voyage P&L Model
 
-A support tool for evaluating whether single unhedged Aframax shipments of WTI crude from USG to ARA are profitable under varying market and operational conditions.
+Estimates voyage economics of unhedged Aframax shipments from USG to ARA across varying market and operational conditions.
 
 ---
 
