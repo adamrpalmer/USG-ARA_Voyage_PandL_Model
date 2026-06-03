@@ -11,7 +11,7 @@ from .config import MATRIX_COLS
 
 def load_matrix(path: str) -> pd.DataFrame:
     """
-    §3.5.1 — Load and validate the market data matrix.
+    §3.5.1 — Load and validate the historical dataset.
 
     Reads a CSV or Excel file, sets the 'date' column as a DatetimeIndex
     (ascending), and validates that all columns in config.MATRIX_COLS are
@@ -39,7 +39,7 @@ def load_matrix(path: str) -> pd.DataFrame:
     missing = [col for col in MATRIX_COLS if col not in df.columns]
     if missing:
         raise ValueError(
-            f"Market data matrix is missing required columns: {missing}"
+            f"Historical dataset is missing required columns: {missing}"
         )
 
     return df[MATRIX_COLS]

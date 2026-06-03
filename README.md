@@ -89,9 +89,9 @@ If ARA refineries have compatible light-sweet crude slate configurations, they c
 
 ## Methodology
 
- Voyage P&L is simulated via a historical block bootstrap on a time-indexed historical data matrix. Each simulation path begins from a historical observation similar to the current WTI level and spread, avoiding explicit parametric assumptions about the variables' dependence structure.
+ Voyage P&L is simulated by sampling contiguous blocks from a historical dataset containing market and operational variables. Each simulation path begins from selecting an observation with similar seasonality and level of WTI and Brent, avoiding explicit parametric assumptions about the variables' dependence structure.
 
-The simulation algorithm traces six operationally significant nodes according to the execution timeline through the historical data matrix — from arbitrage decision to settlement — reading market and operational variables at each based on the trade structure. Variables unavailable for bootstrapping due to confidentiality (demurrage, financing spread, port fees, handling losses and measurement errors) are assigned triangular distributions under conservative assumptions.
+The simulation algorithm traces six operationally significant nodes according to the execution timeline through the historical dataset — from trade commitment to settlement — reading market and operational variables at each based on the trade structure. Variables unavailable due to confidentiality (demurrage, financing spread, port fees, handling losses and measurement errors) are assigned triangular distributions under conservative assumptions.
 
 Full methodology is documented separately.
 
@@ -110,7 +110,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Market inputs and simulation parameters are configured in `src/config.py`. Results are written to `outputs/`. Code will not run unless a historical data matrix is present.
+Market inputs and simulation parameters are configured in `src/config.py`. Results are written to `outputs/`. Code will not run unless the historical dataset is present.
 
 ---
 
@@ -124,7 +124,7 @@ src/
 └── report.py       # Output generation
 data/
 ├── raw/            # Source market data
-└── processed/      # Historical data matrix
+└── processed/      # Historical dataset
 outputs/            # Simulation results
 ```
 
@@ -132,7 +132,7 @@ outputs/            # Simulation results
 
 ## Status
 
-Unhedged simulation is complete. Considering adding hedged execution comparison long-term.
+Unhedged simulation is complete. Adding hedged execution comparison long-term is an identified improvement.
 
 ---
 

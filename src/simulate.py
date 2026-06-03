@@ -172,13 +172,13 @@ def inner_loop(
     """
     §3.5.6 — single P&L sample.
 
-    Traces a contiguous block through the market data matrix starting at t1,
+    Traces a contiguous block through the historical dataset starting at t1,
     reads the required values at each of the six nodes, and evaluates the P&L
     function. Returns a flat dict of outputs for the outer loop to collect.
 
     Parameters
     ----------
-    matrix      : Market data matrix (DatetimeIndex, ascending).
+    matrix      : Historical dataset (DatetimeIndex, ascending).
     wti_level   : Current WTI Houston FOB ($/bbl), live input at t=0.
     spread      : Current Brent–WTI spread ($/bbl), live input at t=0.
     t1_selector : T1Selector instance.
@@ -319,7 +319,7 @@ def outer_loop(
 
     Parameters
     ----------
-    matrix      : Market data matrix (DatetimeIndex, ascending).
+    matrix      : Historical dataset (DatetimeIndex, ascending).
     wti_level   : Current WTI Houston FOB ($/bbl).
     spread      : Current Brent–WTI spread ($/bbl).
     t1_selector : T1Selector instance (MahalanobisT1Selector).

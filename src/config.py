@@ -40,7 +40,7 @@ DECISION_THRESHOLD  = 1.0    # EV / CVaR_0.05 must meet or exceed this
 
 DEFAULT_N_SIMS  = 10_000
 
-# ── Market Data Matrix Column Names (§3.5.1) ──────────────────────────────────
+# ── Historical Dataset Column Names (§3.5.1) ──────────────────────────────────
 
 COL_DATED_BRENT   = "dated_brent"              # $/bbl, financial
 COL_WTI_HOUSTON   = "wti_houston_fob"          # $/bbl, financial
@@ -53,7 +53,7 @@ COL_TD25_FLAT     = "td25_flat_rate"           # $/mt, financial
 COL_SOFR          = "sofr"                     # decimal rate, financial
 COL_FX            = "fx_to_usd"               # USD per EUR, financial
 
-# Columns present in the market data matrix (§3.5.1)
+# Columns present in the historical dataset (§3.5.1)
 MATRIX_COLS = [
     COL_DATED_BRENT,
     COL_WTI_HOUSTON,

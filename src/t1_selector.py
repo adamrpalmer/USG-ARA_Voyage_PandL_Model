@@ -1,7 +1,7 @@
 """
 t1 Selection Interface for the FOB USG-NWE Voyage P&L Model.
 
-The market data matrix and the t1 selection algorithm are the two components
+The historical dataset and the t1 selection algorithm are the two components
 that are plugged in when data and methodology become available. This module
 defines the interface that any t1 selector must satisfy.
 
@@ -33,7 +33,7 @@ class T1Selector(abc.ABC):
     """
     Abstract base for all t1 selection strategies.
 
-    A selector receives the market data matrix and the live inputs at the
+    A selector receives the historical dataset and the live inputs at the
     arbitrage decision (t=0), and returns a single historical date t1 from
     which the inner loop will begin tracing the matrix block.
 
@@ -59,7 +59,7 @@ class T1Selector(abc.ABC):
 
         Parameters
         ----------
-        matrix    : Market data matrix (DatetimeIndex, ascending).
+        matrix    : Historical dataset (DatetimeIndex, ascending).
         wti_level : Current WTI Houston FOB price ($/bbl) at t=0.
         spread    : Current Brent–WTI spread ($/bbl) at t=0.
         rng       : NumPy random generator (seeded by outer loop).
@@ -130,7 +130,7 @@ class MahalanobisT1Selector(T1Selector):
 
         Parameters
         ----------
-        matrix : Market data matrix (DatetimeIndex, ascending).
+        matrix : Historical dataset (DatetimeIndex, ascending).
         mode   : 'live' or 'scenario' — governs how Σ is estimated.
         """
         mode = mode.strip().lower()
