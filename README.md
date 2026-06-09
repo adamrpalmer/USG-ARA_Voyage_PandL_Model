@@ -71,7 +71,7 @@ If ARA refineries have compatible light-sweet crude slate configurations, they c
 
 ## Example Outputs (Synthetic Dataset)
 
-**Inputs:** WTI Houston FOB = $65.00/bbl · Brent–WTI Spread = +$4.50/bbl · n = 10,000
+**Inputs:** WTI Houston FOB = $70.00/bbl · Brent–WTI Spread = +$4.50/bbl · n = 10,000
 
 ### Page 1 — Voyage P&L Summary
 
