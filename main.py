@@ -21,7 +21,7 @@ if hasattr(sys.stdout, "reconfigure"):
 from src.data import load_matrix
 from src.t1_selector import MahalanobisT1Selector
 from src.simulate import outer_loop
-from src.report import print_summary, plot_pnl_distribution, plot_audit_diagnostics
+from src.report import print_summary, plot_pnl_distribution, plot_audit_diagnostics, plot_crn_freight_comparison
 from src.config import COL_WTI_HOUSTON, COL_DATED_BRENT
 
 _DATA_PATH = "data/processed/FOB_USG_ARA_Market_Data_Matrix.csv"
@@ -314,6 +314,8 @@ def main() -> None:
         n_sims_target=_N_SIMS,
         show=False,
     )
+
+    plot_crn_freight_comparison(sim_df, wti_level=wti, spread=spread, show=False)
 
     plt.show()
 

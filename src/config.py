@@ -34,7 +34,7 @@ T_SETTLEMENT_LAG     = (5,    30,     10)     # days, discharge pricing → ARA 
 # ── Decision Rule (§2) ────────────────────────────────────────────────────────
 
 CVAR_ALPHA          = 0.05   # expected shortfall confidence level (left tail)
-DECISION_THRESHOLD  = 1.0    # EV / CVaR_0.05 must meet or exceed this
+DECISION_THRESHOLD  = 1.0    # EV / CVaR_0.05 heuristic reference level
 
 # ── Simulation ────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 # USG–ARA Voyage P&L Model
 
-Estimates voyage economics of unhedged Aframax shipments from USG to ARA across varying market and operational conditions.
+Historical Monte Carlo simulation of voyage P&L for an unhedged Aframax WTI cargo from USG to ARA – seasonality, WTI and Brent level inputs generate P&L distributions, P&L attribution, fixture timing comparisons and downside-risk metrics.
 
 ---
 
@@ -84,6 +84,18 @@ If ARA refineries have compatible light-sweet crude slate configurations, they c
 ### Page 3 — Audit Diagnostics
 
 ![Audit Diagnostics](examples/audit_diagnostics.png)
+
+### Page 4 — Freight Comparison
+
+![Freight Comparison](examples/freight_comparison.png)
+
+### Page 5 — Freight Timing Surfaces
+
+![Freight Timing Surface](examples/freight_timing_surface.png)
+
+### Page 6 — Expected Value and 50/50 Surfaces
+
+![Freight Timing Surface](examples/EV_EL_surface.png)
 
 ---
 

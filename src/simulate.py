@@ -44,7 +44,7 @@ from .config import (
     COL_SOFR,
     COL_FX,
 )
-from .pnl import compute_pnl
+from .pnl import compute_freight, compute_pnl
 from .t1_selector import T1Selector
 
 
@@ -280,6 +280,13 @@ def inner_loop(
         eps4=p["eps4"],
     )
 
+    # ── CRN: Node 3 freight (BL date) for freight timing comparison ──────────
+    ws_quote_n3       = _read_financial_single(s[COL_WS_QUOTE], node3)
+    td25_flat_rate_n3 = _read_financial_single(s[COL_TD25_FLAT], node3)
+    freight_n3        = compute_freight(ws_quote_n3, td25_flat_rate_n3)
+    result["freight_node3"]     = freight_n3
+    result["pnl_node3_freight"] = result["pnl"] + result["freight"] - freight_n3
+
     result["ws_quote"]                = ws_quote
     result["td25_flat_rate"]          = td25_flat_rate
     result["total_exposure_days"]     = total_exposure_days
@@ -331,7 +338,7 @@ def outer_loop(
     tuple (pd.DataFrame, list[pd.Timestamp]):
         DataFrame with columns:
             pnl, spread, freight, financing, demurrage, insurance, port_fees,
-            ws_quote, td25_flat_rate,
+            ws_quote, td25_flat_rate, freight_node3, pnl_node3_freight,
             total_exposure_days, financing_exposure_days,
             t_sea_passage_days, t_origin_port_days, t_origin_berth_hrs, t_dest_berth_hrs,
             sofr_bl, fx_bl, p_brent_5day, p_wti_5day,

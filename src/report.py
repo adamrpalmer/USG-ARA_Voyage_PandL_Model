@@ -2,7 +2,7 @@
 Output generation for the FOB USG-NWE Voyage P&L Model.
 
 Produces:
-  - Console summary (EV, CVaR, EV/|CVaR|, component breakdown, trade decision)
+  - Console summary (EV, CVaR, EV/|CVaR|, component breakdown, decision heuristic)
   - Voyage P&L report figure: compact summary panel + distribution histogram
   - Decision surface over a (WTI level, spread) grid
 """
@@ -105,7 +105,7 @@ def compute_cvar(pnl: pd.Series, alpha: float = CVAR_ALPHA) -> float:
 
 def compute_decision_metric(ev: float, cvar: float) -> float:
     """
-    EV / |CVaR_alpha| per the decision rule.
+    EV / |CVaR_alpha| per the decision heuristic.
     CVaR is a positive loss magnitude; returns inf when CVaR <= 0.
     """
     if np.isnan(cvar) or cvar == 0.0:
@@ -536,7 +536,7 @@ def _draw_voyage_summary(
     FS_COMP = 8.0
     FS_EXPO = 8.0
 
-    # DECISION METRICS block
+    # DECISION HEURISTIC block
     cvar_color = _C["red"] if cvar_m > 0 else _C["green"]
     metric_rows = [
         ("Expected P&L",           _fmt_pnl(ev_m),      ev_color),
@@ -668,13 +668,15 @@ def _build_histogram_figure(
     wti_level: float,
     spread: float,
     modes: list[dict],
+    pnl_col: str = "pnl",
+    fig_title: str = "P&L Distribution — Freight Priced at Fixture",
 ) -> plt.Figure:
     """
     Page 2: standalone P&L distribution histogram.
     Modes are passed in from _draw_voyage_summary so annotations are consistent
     with the table on page 1.
     """
-    pnl_m  = sim_df["pnl"] / 1e6
+    pnl_m  = sim_df[pnl_col] / 1e6
     ev_m   = float(pnl_m.mean())
     var_m  = float(pnl_m.quantile(CVAR_ALPHA))
     tail   = pnl_m[pnl_m <= var_m]
@@ -776,7 +778,7 @@ def _build_histogram_figure(
                        color=_C["grey"], labelpad=8)
     # Title placed in figure-fraction coordinates (above the axes top) so it
     # cannot overlap with mode labels, which use the blended axes transform.
-    fig.text(0.07, 0.975, "P&L Distribution",
+    fig.text(0.07, 0.975, fig_title,
              fontsize=12, fontweight="bold", color=_C["dark"],
              va="top", ha="left")
 
@@ -834,7 +836,7 @@ def plot_pnl_distribution(
     """
     Two-page voyage P&L report.
 
-    Page 1 — voyage summary card: decision metrics, conditional component means
+    Page 1 — voyage summary card: decision heuristic, conditional component means
               table, exposure block.
     Page 2 — P&L distribution histogram with modal region annotations.
 
@@ -864,6 +866,370 @@ def plot_pnl_distribution(
         plt.show()
 
     return fig1, fig2
+
+
+def plot_crn_freight_scatter(
+    sim_df: pd.DataFrame,
+    wti_level: float,
+    spread: float,
+    show: bool = True,
+    save_path: str | None = None,
+) -> plt.Figure:
+    """
+    CRN freight timing comparison: paired per-path scatter plot.
+
+    Each point is one simulation path at (P&L_Fixture, P&L_BL).  Because all
+    other variables are held constant via Common Random Numbers, vertical
+    displacement from the y = x diagonal is attributable solely to the
+    difference between fixing freight at the arbitrage decision (t=0) versus
+    the BL date (Node 3).
+    """
+    pnl_fix_m = sim_df["pnl"] / 1e6
+    pnl_bl_m  = sim_df["pnl_node3_freight"] / 1e6
+
+    lo  = min(float(pnl_fix_m.min()), float(pnl_bl_m.min()))
+    hi  = max(float(pnl_fix_m.max()), float(pnl_bl_m.max()))
+    pad = (hi - lo) * 0.03
+    lim_lo, lim_hi = lo - pad, hi + pad
+
+    fig, ax = plt.subplots(figsize=(9, 9))
+    fig.patch.set_facecolor("white")
+    fig.subplots_adjust(left=0.12, right=0.97, top=0.91, bottom=0.10)
+
+    ax.set_facecolor(_C["bg"])
+
+    ax.scatter(
+        pnl_fix_m, pnl_bl_m,
+        alpha=0.15, s=4,
+        color=_C["blue"], linewidths=0,
+        zorder=3, rasterized=True,
+        label=f"Simulation paths  (n = {len(sim_df):,})",
+    )
+
+    ax.axline(
+        (0.0, 0.0), slope=1.0,
+        color=_C["amber"], lw=1.5, ls="--", zorder=4,
+        label="Policies equivalent  (y = x)",
+    )
+
+    ax.set_xlim(lim_lo, lim_hi)
+    ax.set_ylim(lim_lo, lim_hi)
+    ax.set_aspect("equal", adjustable="box")
+
+    ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("$%.1fM"))
+    ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("$%.1fM"))
+
+    ax.set_xlabel("P&L — Freight Priced at Fixture (USD M)",
+                  fontsize=10, color=_C["grey"], labelpad=8)
+    ax.set_ylabel("P&L — Freight Priced at BL (USD M)",
+                  fontsize=10, color=_C["grey"], labelpad=8)
+
+    fig.text(
+        0.12, 0.975, "Per-Path P&L: Freight Fixture vs BL Pricing",
+        fontsize=12, fontweight="bold", color=_C["dark"],
+        va="top", ha="left",
+    )
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(_C["ltgrey"])
+    ax.spines["bottom"].set_color(_C["ltgrey"])
+    ax.tick_params(axis="both", colors=_C["grey"], labelsize=9)
+    ax.yaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax.xaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax.set_axisbelow(True)
+
+    ax.legend(
+        frameon=True, framealpha=0.92, fontsize=8,
+        edgecolor=_C["ltgrey"], facecolor=_C["bg"],
+        loc="upper left",
+    )
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight")
+
+    if show:
+        plt.show()
+
+    return fig
+
+
+def plot_crn_freight_mean_diff(
+    sim_df: pd.DataFrame,
+    wti_level: float,
+    spread: float,
+    show: bool = True,
+    save_path: str | None = None,
+) -> plt.Figure:
+    """
+    Tukey mean-difference plot for freight timing comparison.
+
+    X-axis: P&L_Fixture (the baseline policy, $/M).
+    Y-axis: ΔP&L = P&L_BL − P&L_Fixture ($/M).
+
+    Because all variables other than the freight read date are held constant
+    via CRN, vertical displacement from Δ = 0 is attributable solely to
+    the freight timing effect (BL date vs arbitrage decision).
+    """
+    pnl_fix_m = sim_df["pnl"] / 1e6
+    pnl_bl_m  = sim_df["pnl_node3_freight"] / 1e6
+    delta_m   = pnl_bl_m - pnl_fix_m
+
+    mean_d  = float(delta_m.mean())
+    sig_d   = float(delta_m.std())
+    sig_fix = float(pnl_fix_m.std())
+    sig_bl  = float(pnl_bl_m.std())
+    lo_lim  = mean_d - 1.96 * sig_d
+    hi_lim  = mean_d + 1.96 * sig_d
+    p_bl_gt = float((pnl_bl_m > pnl_fix_m).mean() * 100)
+    corr    = float(np.corrcoef(pnl_fix_m.values, pnl_bl_m.values)[0, 1])
+
+    fig, ax = plt.subplots(figsize=(14, 8))
+    fig.patch.set_facecolor("white")
+    fig.subplots_adjust(left=0.07, right=0.97, top=0.91, bottom=0.12)
+
+    ax.set_facecolor(_C["bg"])
+
+    ax.scatter(
+        pnl_fix_m, delta_m,
+        alpha=0.15, s=4,
+        color=_C["blue"], linewidths=0,
+        zorder=3, rasterized=True,
+        label=f"Simulation paths  (n = {len(sim_df):,})",
+    )
+
+    ax.axhline(0.0,    color=_C["amber"],  lw=1.5, ls="-",  zorder=4,
+               label="Policies equivalent  (Δ = 0)")
+    ax.axhline(mean_d, color=_C["green"],  lw=1.4, ls="--", zorder=4,
+               label="Mean Δ")
+    ax.axhline(hi_lim, color=_C["salmon"], lw=1.0, ls=":",  zorder=4,
+               label="±1.96σ(Δ)")
+    ax.axhline(lo_lim, color=_C["salmon"], lw=1.0, ls=":",  zorder=4)
+
+    ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("$%.1fM"))
+    ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("$%.2fM"))
+
+    ax.set_xlabel("P&L — Freight Priced at Fixture (USD M)",
+                  fontsize=10, color=_C["grey"], labelpad=8)
+    ax.set_ylabel("ΔP&L = BL − Fixture (USD M)",
+                  fontsize=10, color=_C["grey"], labelpad=8)
+
+    fig.text(
+        0.07, 0.975, "Per-Path Freight-Timing Effect on P&L",
+        fontsize=12, fontweight="bold", color=_C["dark"],
+        va="top", ha="left",
+    )
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(_C["ltgrey"])
+    ax.spines["bottom"].set_color(_C["ltgrey"])
+    ax.tick_params(axis="both", colors=_C["grey"], labelsize=9)
+    ax.yaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax.xaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax.set_axisbelow(True)
+
+    # Stats box: place in whichever top corner has fewer scatter points
+    x_mid = float(pnl_fix_m.median())
+    d_hi  = delta_m > float(delta_m.median())
+    n_tl  = int(((pnl_fix_m <  x_mid) & d_hi).sum())
+    n_tr  = int(((pnl_fix_m >= x_mid) & d_hi).sum())
+    box_x, box_ha = (0.03, "left") if n_tl <= n_tr else (0.97, "right")
+
+    stats_text = (
+        f"σ(P&L Fixture):    ${sig_fix:.2f}M\n"
+        f"σ(P&L BL):         ${sig_bl:.2f}M\n"
+        f"σ(Δ):              ${sig_d:.3f}M\n"
+        f"mean(Δ):           ${mean_d:+.3f}M\n"
+        f"P(BL > Fixture):   {p_bl_gt:.1f}%\n"
+        f"corr(Fixture, BL): {corr:.3f}"
+    )
+    ax.text(
+        box_x, 0.97, stats_text,
+        transform=ax.transAxes,
+        ha=box_ha, va="top",
+        fontsize=7.5, color=_C["dark"],
+        linespacing=1.6,
+        bbox=dict(
+            boxstyle="round,pad=0.5",
+            facecolor=_C["panel_l"],
+            edgecolor=_C["ltgrey"],
+            linewidth=0.5,
+            alpha=0.90,
+        ),
+    )
+
+    legend = ax.legend(
+        frameon=True, framealpha=0.92, fontsize=8,
+        edgecolor=_C["ltgrey"], facecolor=_C["bg"],
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.01),
+        bbox_transform=fig.transFigure,
+        ncol=2,
+        borderpad=0.6,
+        columnspacing=1.5,
+    )
+    legend.get_frame().set_linewidth(0.5)
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight")
+
+    if show:
+        plt.show()
+
+    return fig
+
+
+def plot_crn_freight_comparison(
+    sim_df: pd.DataFrame,
+    wti_level: float,
+    spread: float,
+    show: bool = True,
+    save_path: str | None = None,
+) -> plt.Figure:
+    """
+    Combined freight-timing comparison: paired scatter (left) and Tukey
+    mean-difference plot (right) in a single side-by-side figure.
+    """
+    pnl_fix_m = sim_df["pnl"] / 1e6
+    pnl_bl_m  = sim_df["pnl_node3_freight"] / 1e6
+    delta_m   = pnl_bl_m - pnl_fix_m
+
+    mean_d  = float(delta_m.mean())
+    sig_d   = float(delta_m.std())
+    sig_fix = float(pnl_fix_m.std())
+    sig_bl  = float(pnl_bl_m.std())
+    lo_lim  = mean_d - 1.96 * sig_d
+    hi_lim  = mean_d + 1.96 * sig_d
+    p_bl_gt = float((pnl_bl_m > pnl_fix_m).mean() * 100)
+    corr    = float(np.corrcoef(pnl_fix_m.values, pnl_bl_m.values)[0, 1])
+
+    fig, (ax_sc, ax_md) = plt.subplots(1, 2, figsize=(16, 7))
+    fig.patch.set_facecolor("white")
+    fig.subplots_adjust(left=0.06, right=0.97, top=0.88, bottom=0.12, wspace=0.30)
+
+    # ── Left: paired scatter ──────────────────────────────────────────────────
+    sc_lo  = min(float(pnl_fix_m.min()), float(pnl_bl_m.min()))
+    sc_hi  = max(float(pnl_fix_m.max()), float(pnl_bl_m.max()))
+    sc_pad = (sc_hi - sc_lo) * 0.03
+    sc_lo, sc_hi = sc_lo - sc_pad, sc_hi + sc_pad
+
+    ax_sc.set_facecolor(_C["bg"])
+    ax_sc.scatter(
+        pnl_fix_m, pnl_bl_m,
+        alpha=0.15, s=4,
+        color=_C["blue"], linewidths=0,
+        zorder=3, rasterized=True,
+        label=f"Simulation paths  (n = {len(sim_df):,})",
+    )
+    ax_sc.axline(
+        (0.0, 0.0), slope=1.0,
+        color=_C["amber"], lw=1.5, ls="--", zorder=4,
+        label="Policies equivalent  (y = x)",
+    )
+    ax_sc.set_xlim(sc_lo, sc_hi)
+    ax_sc.set_ylim(sc_lo, sc_hi)
+    ax_sc.xaxis.set_major_formatter(mticker.FormatStrFormatter("$%.1fM"))
+    ax_sc.yaxis.set_major_formatter(mticker.FormatStrFormatter("$%.1fM"))
+    ax_sc.set_xlabel("P&L — Freight Priced at Fixture (USD M)",
+                     fontsize=9, color=_C["grey"], labelpad=8)
+    ax_sc.set_ylabel("P&L — Freight Priced at BL (USD M)",
+                     fontsize=9, color=_C["grey"], labelpad=8)
+    ax_sc.set_title("Per-Path P&L: Freight Fixture vs BL Pricing",
+                    fontsize=11, fontweight="bold", color=_C["dark"],
+                    loc="left", pad=8)
+    ax_sc.spines["top"].set_visible(False)
+    ax_sc.spines["right"].set_visible(False)
+    ax_sc.spines["left"].set_color(_C["ltgrey"])
+    ax_sc.spines["bottom"].set_color(_C["ltgrey"])
+    ax_sc.tick_params(axis="both", colors=_C["grey"], labelsize=8)
+    ax_sc.yaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax_sc.xaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax_sc.set_axisbelow(True)
+    ax_sc.legend(
+        frameon=True, framealpha=0.92, fontsize=7.5,
+        edgecolor=_C["ltgrey"], facecolor=_C["bg"],
+        loc="upper left",
+    ).get_frame().set_linewidth(0.5)
+
+    # ── Right: mean-difference ────────────────────────────────────────────────
+    ax_md.set_facecolor(_C["bg"])
+    ax_md.scatter(
+        pnl_fix_m, delta_m,
+        alpha=0.15, s=4,
+        color=_C["blue"], linewidths=0,
+        zorder=3, rasterized=True,
+        label=f"Simulation paths  (n = {len(sim_df):,})",
+    )
+    ax_md.axhline(0.0,    color=_C["amber"],  lw=1.5, ls="-",  zorder=4,
+                  label="Policies equivalent  (Δ = 0)")
+    ax_md.axhline(mean_d, color=_C["green"],  lw=1.4, ls="--", zorder=4,
+                  label="Mean Δ")
+    ax_md.axhline(hi_lim, color=_C["salmon"], lw=1.0, ls=":",  zorder=4,
+                  label="±1.96σ(Δ)")
+    ax_md.axhline(lo_lim, color=_C["salmon"], lw=1.0, ls=":",  zorder=4)
+    ax_md.xaxis.set_major_formatter(mticker.FormatStrFormatter("$%.1fM"))
+    ax_md.yaxis.set_major_formatter(mticker.FormatStrFormatter("$%.2fM"))
+    ax_md.set_xlabel("P&L — Freight Priced at Fixture (USD M)",
+                     fontsize=9, color=_C["grey"], labelpad=8)
+    ax_md.set_ylabel("ΔP&L = BL − Fixture (USD M)",
+                     fontsize=9, color=_C["grey"], labelpad=8)
+    ax_md.set_title("Per-Path Freight-Timing Effect on P&L",
+                    fontsize=11, fontweight="bold", color=_C["dark"],
+                    loc="left", pad=8)
+    ax_md.spines["top"].set_visible(False)
+    ax_md.spines["right"].set_visible(False)
+    ax_md.spines["left"].set_color(_C["ltgrey"])
+    ax_md.spines["bottom"].set_color(_C["ltgrey"])
+    ax_md.tick_params(axis="both", colors=_C["grey"], labelsize=8)
+    ax_md.yaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax_md.xaxis.grid(True, color="#d8dde4", lw=0.4, zorder=0)
+    ax_md.set_axisbelow(True)
+
+    # Stats box: top corner with fewer scatter points
+    x_mid = float(pnl_fix_m.median())
+    d_hi  = delta_m > float(delta_m.median())
+    n_tl  = int(((pnl_fix_m <  x_mid) & d_hi).sum())
+    n_tr  = int(((pnl_fix_m >= x_mid) & d_hi).sum())
+    box_x, box_ha = (0.03, "left") if n_tl <= n_tr else (0.97, "right")
+    stats_text = (
+        f"σ(P&L Fixture):    ${sig_fix:.2f}M\n"
+        f"σ(P&L BL):         ${sig_bl:.2f}M\n"
+        f"σ(Δ):              ${sig_d:.3f}M\n"
+        f"mean(Δ):           ${mean_d:+.3f}M\n"
+        f"P(BL > Fixture):   {p_bl_gt:.1f}%\n"
+        f"corr(Fixture, BL): {corr:.3f}"
+    )
+    ax_md.text(
+        box_x, 0.97, stats_text,
+        transform=ax_md.transAxes,
+        ha=box_ha, va="top",
+        fontsize=7, color=_C["dark"],
+        linespacing=1.6,
+        bbox=dict(
+            boxstyle="round,pad=0.5",
+            facecolor=_C["panel_l"],
+            edgecolor=_C["ltgrey"],
+            linewidth=0.5,
+            alpha=0.90,
+        ),
+    )
+    ax_md.legend(
+        frameon=True, framealpha=0.92, fontsize=7.5,
+        edgecolor=_C["ltgrey"], facecolor=_C["bg"],
+        loc="lower right",
+        ncol=2,
+        borderpad=0.6,
+        columnspacing=1.2,
+    ).get_frame().set_linewidth(0.5)
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight")
+
+    if show:
+        plt.show()
+
+    return fig
 
 
 # ── Bootstrap stability helper ─────────────────────────────────────────────────
