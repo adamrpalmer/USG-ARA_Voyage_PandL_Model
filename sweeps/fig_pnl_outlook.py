@@ -18,7 +18,7 @@ from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 from src.report import _C
 
 _CSV     = Path("sweeps/sweep_hires_raw.csv")
-_PNG_OUT = Path("sweeps/pnl_outlook.png")
+_PNG_OUT = Path("examples/pnl_outlook.png")
 
 _WTI_LEVELS    = [round(60.0 + 0.25 * i, 2) for i in range(101)]
 _SPREAD_LEVELS = [round(3.50 + 0.25 * i, 2) for i in range(13)]

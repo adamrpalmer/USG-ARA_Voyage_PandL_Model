@@ -91,11 +91,11 @@ If ARA refineries have compatible light-sweet crude slate configurations, they c
 
 ### Page 5 — Freight Timing Surfaces
 
-![Freight Timing Surface](examples/freight_timing_surface.png)
+![Freight Timing Surface](examples/freight_timing.png)
 
-### Page 6 — Expected Value and 50/50 Surfaces
+### Page 6 — Expected Value and Loss Probability Surfaces
 
-![Freight Timing Surface](examples/EV_EL_surface.png)
+![Expected Value and Loss Probability Surfaces](examples/pnl_outlook.png)
 
 ---
 
