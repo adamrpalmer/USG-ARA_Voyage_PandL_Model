@@ -1,6 +1,6 @@
 # USG–ARA Voyage P&L Model
 
-Historical Monte Carlo simulation of voyage P&L for an unhedged Aframax WTI cargo from USG to ARA – seasonality, WTI and Brent level inputs generate P&L distributions, P&L attribution, fixture timing comparisons and downside-risk metrics.
+Historical Monte Carlo simulation of voyage P&L for an unhedged Aframax WTI cargo from USG to ARA – seasonality, WTI and Brent level inputs generate P&L distributions with attribution, fixture timing comparisons and downside-risk metrics.
 
 ---
 
@@ -8,7 +8,7 @@ Historical Monte Carlo simulation of voyage P&L for an unhedged Aframax WTI carg
 
 In physical crude markets, benchmark spreads alone do not determine whether a cargo is profitable. Instead, voyage P&L depends on whether the spread compensates for freight, financing, insurance, port fees, cargo losses and delays incurred between trade commitment and settlement. 
 
-If ARA refineries have compatible light-sweet crude slate configurations, they can substitute local North Sea barrel supply with imported WTI to optimise refining margins if the import economics are favourable, creating arbitrage opportunities. In the US shale boom of 2011-2014, the oversupply of crude oil caused heavy WTI discounting, exacerbated by the US export ban. When the ban was lifted in 2015, exports surged and the spread reduced, resulting in thin margins for voyage charters. As their profitability is uncertain, the model aims to provide decision support using P&L attribution and risk metrics.
+ARA refineries running light-sweet crude slate configurations can substitute local North Sea barrel supply with imported WTI to optimise refining margins if the import economics are favourable, creating arbitrage opportunities. In the 2011-2014 US shale boom, the oversupply of crude oil caused heavy WTI discounting, exacerbated by the US export ban. When the ban was lifted in 2015, exports increased and the spread narrowed, resulting in thinner cargo margins and uncertain profitability.
 
 ---
 
@@ -23,7 +23,7 @@ If ARA refineries have compatible light-sweet crude slate configurations, they c
 | Vessel class | Aframax |
 | Cargo size | 730,000 bbl / 95,000 mt |
 | Incoterms | FOB Buy USG, CIF Sell ARA |
-| Hedge strategy | No derivatives use
+| Derivatives Usage | Unhedged
 
 **Execution Timeline:** At *t* = 0, freight is fixed and WTI is ordered under a Sales and Purchase Agreement (SPA) for pricing at the 5-day average around the Bill of Lading date (BL), with a Letter of Credit issued to the USG counterparty. The vessel transits to ARA after loading. The sell leg floats to the 5-day average of Dated Brent assessments around discharge. Financing accrues from BL to settlement under SOFR plus a credit spread. Total exposure spans arbitrage decision to ARA counterparty settlement.
 
@@ -144,7 +144,7 @@ outputs/            # Simulation results
 
 ## Status
 
-Unhedged simulation is complete. Adding hedged execution comparison long-term is an identified improvement.
+Unhedged simulation is complete as the economic benchmark, implementing hedged structures for comparison is the next extension.
 
 ---
 
