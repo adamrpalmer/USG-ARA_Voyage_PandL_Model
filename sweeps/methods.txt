@@ -1,0 +1,12 @@
+Model: V7 USG-ARA Aframax voyage charter, unhedged.
+Reference: USG-ARA_Voyage_PL_Model_V7.tex.
+
+Sweep: 31 WTI levels ($65.00-$80.00 at $0.50 increments) x 15 spread levels
+($1.00-$8.00 at $0.50 increments), 10,000 simulations per cell, scenario-mode
+Mahalanobis t1 selector, 4,650,000 simulations total.
+
+Data: FOB_USG_ARA_Market_Data_Matrix.csv spanning 2019-2026, calibrated to
+the price regimes described in the V7 document.
+
+Per-cell credibility signals (ess_d, tail_ess, wti_bias_rel) recorded in
+sweep_hires_raw.csv for technical reference.

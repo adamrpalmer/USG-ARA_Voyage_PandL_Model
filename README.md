@@ -1,0 +1,165 @@
+# USG–ARA Voyage P&L Model
+
+Historical Monte Carlo simulation of voyage P&L for an unhedged Aframax WTI cargo from USG to ARA – seasonality, WTI and Brent level inputs generate P&L distributions with attribution, fixture timing comparisons and downside-risk metrics.
+
+---
+
+## Commercial Problem
+
+Benchmark spreads alone do not determine whether a cargo is profitable. Instead, voyage P&L depends on whether the spread compensates for freight, financing, insurance, port fees, cargo losses and delays incurred between trade commitment and settlement. 
+
+ARA refineries running light-sweet crude slate configurations can substitute local North Sea barrel supply with imported WTI to optimise refining margins if the import economics are favourable, creating arbitrage opportunities. In the 2011-2014 US shale boom, the oversupply of crude oil caused heavy WTI discounting, exacerbated by the US export ban. When the ban was lifted in 2015, exports increased and the spread narrowed, resulting in thinner cargo margins and uncertain profitability.
+
+---
+
+## Trade Structure
+
+| Parameter | Specification |
+|---|---|
+| Commodity | Crude Oil |
+| Origin proxy | WTI Houston FOB |
+| Destination proxy | Dated Brent |
+| Route | USG → ARA |
+| Vessel class | Aframax |
+| Cargo size | 730,000 bbl / 95,000 mt |
+| Incoterms | FOB Buy USG, CIF Sell ARA |
+| Derivatives Usage | Unhedged
+
+**Execution Timeline:** At *t* = 0, freight is fixed and WTI is ordered under a Sales and Purchase Agreement (SPA) for pricing at the 5-day average around the Bill of Lading date (BL), with a Letter of Credit issued to the USG counterparty. The vessel transits to ARA after loading. The sell leg floats to the 5-day average of Dated Brent assessments around discharge. Financing accrues from BL to settlement under SOFR plus a credit spread. Total exposure spans vessel fixture to ARA counterparty settlement.
+
+**Sales and Purchase Agreement**
+
+| Term | Specification |
+|---|---|
+| Cargo quantity | 730,000 bbl |
+| Buy leg pricing | 5-day average of WTI Houston FOB assessments around BL |
+| Sell leg pricing | 5-day average of Dated Brent assessments around discharge (floating) |
+| Non-trading day rule | Nearest previous assessment used |
+| Quantity sold | Cargo quantity at discharge |
+| Settlement | Cash Against Documents (CAD) |
+| Settlement limit | 30 days after discharge |
+| Insurance coverage | Institute Cargo Clauses A, 110% of cargo value |
+| Insurance premium | 0.50% |
+
+**Charterparty**
+
+| Term | Specification |
+|---|---|
+| Vessel class | Aframax |
+| Freight fixing | Fixed at t=0, priced off associated WS Quote  |
+| Payment timing | Full freight at BL (voyage charter) |
+| NOR | Issued at port limits (WIBON) |
+| Laytime allowance | 36 hours at origin and destination, SHINC, non-reversible |
+| Laytime clock start | 6 hours after NOR |
+| Laytime clock end | Hose disconnection |
+| Demurrage rate | $75,000/day |
+| Destination port fees | Fees incurred pre-discharge are borne by the charterer. Shipowner pays all fees incurred post-discharge |
+
+**Financing**
+
+| Term | Specification |
+|---|---|
+| Instrument | Letter of credit issued to USG counterparty |
+| Valuation basis | Cargo value per SPA convention |
+| Interest accrual | Daily from BL to settlement, ACT/365 |
+| Rate | SOFR 30-day average + credit spread |
+| Exposure window | BL → settlement |
+
+**P&L components:** Gross cargo margin − Freight − Financing − Demurrage − Insurance − Port Fees 
+
+---
+
+## Example Outputs (Synthetic Dataset)
+
+**Inputs:** WTI Houston FOB = $70.00/bbl · Brent–WTI Spread = +$4.50/bbl · n = 10,000
+
+### Page 1 — Voyage P&L Summary
+
+![P&L Summary](examples/pnl_summary.png)
+
+### Page 2 — P&L Distribution
+
+![P&L Distribution](examples/pnl_distribution.png)
+
+### Page 3 — Audit Diagnostics
+
+![Audit Diagnostics](examples/audit_diagnostics.png)
+
+### Page 4 — Freight Comparison
+
+![Freight Comparison](examples/freight_comparison.png)
+
+### Page 5 — Freight Timing Surfaces
+
+![Freight Timing Surface](examples/freight_timing.png)
+
+### Page 6 — Expected Value and Loss Probability Surfaces
+
+![Expected Value and Loss Probability Surfaces](examples/pnl_outlook.png)
+
+---
+
+## Methodology
+
+ Voyage P&L is simulated by sampling contiguous blocks from a historical dataset containing market and operational variables. Each simulation path begins from selecting an observation with similar seasonality and level of WTI and Brent, avoiding explicit parametric assumptions about the variables' dependence structure.
+
+The simulation algorithm traces six operationally significant nodes according to the execution timeline through the historical dataset — from trade commitment to settlement — reading market and operational variables at each based on the trade structure. Variables unavailable due to confidentiality (demurrage, financing spread, port fees, handling losses and measurement errors) are assigned triangular distributions under conservative assumptions.
+
+Full methodology is documented separately.
+
+**Data inputs:** Dated Brent, WTI Houston FOB, TD25 Flat Rate, WS Quote, SOFR, FX, AIS vessel tracking.
+
+---
+
+## Getting Started
+
+```bash
+git clone https://github.com/adamrpalmer/USG-ARA_Voyage_PandL_Model.git
+cd USG-ARA_Voyage_PandL_Model
+python -m venv .venv && .venv\Scripts\activate  # Windows
+source .venv/bin/activate                        # macOS/Linux
+pip install -r requirements.txt
+python main.py
+```
+
+`main.py` runs interactively: it prompts for the Σ calibration mode (live vs. scenario), the WTI Houston FOB level, and the Brent–WTI spread, then runs the simulation and renders the report. Fixed parameters and triangular distribution assumptions are configured in `src/config.py`. Code will not run unless the historical dataset is present in `data/processed/`.
+
+---
+
+## Project Structure
+
+```
+src/
+├── config.py       # Fixed parameters, distribution assumptions, column constants
+├── data.py         # Historical dataset loading
+├── t1_selector.py  # Mahalanobis-based t1 (trade-commitment date) selector
+├── pnl.py          # P&L sub-functions
+├── simulate.py     # Simulation logic
+└── report.py       # Console summary and plot generation
+sweeps/             # Parameter sweep scripts and cached results
+examples/           # Example output images used in this README
+notebooks/          # Exploratory notebooks
+data/
+├── raw/            # Source market data
+└── processed/      # Historical dataset
+outputs/            # Simulation results
+main.py             # Entry point
+```
+
+---
+
+## Status
+
+Unhedged simulation is complete as the economic benchmark, implementing hedged structures for comparison is the next extension.
+
+---
+
+## Author
+
+**Adam Palmer** 
+
+---
+
+## Licence
+
+See [LICENSE](./LICENSE).
